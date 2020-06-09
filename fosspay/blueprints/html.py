@@ -231,9 +231,13 @@ def donate():
         db.add(user)
     else:
         customer = stripe.Customer.retrieve(user.stripe_customer)
-        new_source = customer.sources.create(source=stripe_token)
-        customer.default_source = new_source.id
-        customer.save()
+        if 'deleted' in customer and customer['deleted']:
+            customer = stripe.Customer.create(email=user.email, card=stripe_token)
+            user.stripe_customer = customer.id
+        else:
+            new_source = customer.sources.create(source=stripe_token)
+            customer.default_source = new_source.id
+            customer.save()
 
     donation = Donation(user, type, amount, project, comment)
     db.add(donation)
